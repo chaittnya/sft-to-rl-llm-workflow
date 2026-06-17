@@ -9,19 +9,19 @@ This repository contains scripts for training and experimenting with large langu
   - The script loads the tokenizer and model from a pretrained checkpoint, formats examples into an instruction-input-response prompt, and saves the resulting fine-tuned model to `./final_model`.
 
 - `PPO/`
-  - `ppo.py` — a simple PPO script that uses the SFT-finetuned model as the base policy.
   - `create_data.py` — generates prompt data for PPO training in JSONL format.
   - The PPO code is intended to show how a policy and reference model can be initialized from the same supervised checkpoint and then updated based on a toy reward function.
+  - `ppo.py` — a simple PPO script that uses the SFT-finetuned model as the base policy.
 
 - `DPO/`
-  - `dpo.py` — a DPO script that starts from the SFT-finetuned model and optimizes it using paired preferred/dispreferred examples.
   - `create_data.py` — creates synthetic preference pairs for DPO training.
   - This directory is designed to demonstrate how preference-based fine-tuning can be set up from a pretrained policy.
+  - `dpo.py` — a DPO script that starts from the SFT-finetuned model and optimizes it using paired preferred/dispreferred examples.
 
 - `GRPO/`
-  - `grpo.py` — a GRPO script that also uses the SFT checkpoint as the base model and performs reward-guided policy updates.
   - `create_data.py` — generates example prompt-reward pairs for GRPO.
   - The GRPO example is intentionally lightweight and uses a toy reward metric for demonstration.
+  - `grpo.py` — a GRPO script that also uses the SFT checkpoint as the base model and performs reward-guided policy updates.
 
 ## How it was designed
 
