@@ -163,3 +163,401 @@ trainer = SFTTrainer(
 trainer.train()
 
 trainer.save_model("./final_model")
+
+
+'''
+AI Generated Explanation:
+
+args = TrainingArguments(
+
+    # ==========================================================
+    # OUTPUT / CHECKPOINT DIRECTORY
+    # ==========================================================
+
+    # Directory where everything is saved:
+    # - checkpoints
+    # - logs
+    # - trainer state
+    # - final model
+    #
+    # Possible values:
+    # Any valid folder path
+    #
+    # Examples:
+    # "./sft_model"
+    # "./outputs/run1"
+    # "/content/checkpoints"
+    output_dir="./sft_model",
+
+    # ==========================================================
+    # TRAINING DURATION
+    # ==========================================================
+
+    # Number of complete passes through the training dataset.
+    #
+    # Example:
+    # Dataset = 1000 samples
+    # Epochs = 3
+    #
+    # Model sees:
+    # 3000 samples total
+    #
+    # Common values:
+    # 1      -> quick experiment
+    # 2-5    -> standard SFT
+    # 10+    -> often overfitting
+    #
+    # Alternative:
+    # max_steps=1000
+    #
+    # If max_steps is specified,
+    # training stops after exactly that many updates.
+    num_train_epochs=3,
+
+    # ==========================================================
+    # BATCH SIZE
+    # ==========================================================
+
+    # Number of samples processed on each device
+    # before one forward/backward pass.
+    #
+    # Larger batch:
+    # + smoother gradients
+    # - more VRAM
+    #
+    # Smaller batch:
+    # + less VRAM
+    # - noisier gradients
+    #
+    # Common values:
+    # 1,2,4,8,16,32
+    per_device_train_batch_size=4,
+
+    # Evaluation batch size.
+    #
+    # Since no gradients are computed,
+    # this can often be larger than training batch size.
+    #
+    # Common values:
+    # 4,8,16,32,64
+    per_device_eval_batch_size=8,
+
+    # ==========================================================
+    # GRADIENT ACCUMULATION
+    # ==========================================================
+
+    # Number of batches whose gradients are accumulated
+    # before performing an optimizer step.
+    #
+    # Effective Batch Size:
+    #
+    # effective_batch_size =
+    # per_device_train_batch_size * gradient_accumulation_steps * num_gpus
+    #
+    # Example:
+    #
+    # batch_size = 4
+    # grad_accum = 4
+    #
+    # effective_batch_size = 16
+    #
+    # Useful when GPU memory is limited.
+    #
+    # Common values:
+    # 1   -> no accumulation
+    # 2
+    # 4
+    # 8
+    # 16
+    gradient_accumulation_steps=4,
+
+    # ==========================================================
+    # LEARNING RATE
+    # ==========================================================
+
+    # Step size used during gradient descent.
+    #
+    # Update rule:
+    #
+    # theta = theta - lr * gradient
+    #
+    # Too large:
+    # - unstable training
+    # - catastrophic forgetting
+    #
+    # Too small:
+    # - slow convergence
+    #
+    # Common SFT values:
+    # 1e-6
+    # 5e-6
+    # 1e-5
+    # 2e-5
+    # 5e-5
+    # 1e-4
+    learning_rate=2e-5,
+
+    # ==========================================================
+    # LEARNING RATE WARMUP
+    # ==========================================================
+
+    # Fraction of training used for warmup.
+    #
+    # Learning rate gradually increases:
+    #
+    # 0 --> learning_rate
+    #
+    # during first warmup_ratio fraction
+    # of training.
+    #
+    # Helps prevent unstable updates
+    # at beginning of training.
+    #
+    # Common values:
+    # 0.0
+    # 0.01
+    # 0.03
+    # 0.05
+    # 0.1
+    warmup_ratio=0.05,
+
+    # ==========================================================
+    # LR SCHEDULER
+    # ==========================================================
+
+    # Determines how learning rate changes
+    # during training.
+    #
+    # Possible options:
+    #
+    # "constant"
+    #   LR never changes.
+    #
+    # "linear"
+    #   LR linearly decays to zero.
+    #
+    # "cosine"
+    #   Cosine decay.
+    #   Very popular for LLM training.
+    #
+    # "cosine_with_restarts"
+    #   Cosine decay with periodic resets.
+    #
+    # "polynomial"
+    #   Polynomial decay.
+    #
+    # "constant_with_warmup"
+    #   Warmup then constant LR.
+    #
+    # "inverse_sqrt"
+    #   Used in some transformer training setups.
+    #
+    # Most common:
+    # "linear"
+    # "cosine"
+    lr_scheduler_type="cosine",
+
+    # ==========================================================
+    # REGULARIZATION
+    # ==========================================================
+
+    # L2 regularization coefficient.
+    #
+    # Loss becomes:
+    #
+    # total_loss =
+    # task_loss + λ||θ||²
+    #
+    # Helps reduce overfitting.
+    #
+    # Common values:
+    # 0.0
+    # 0.001
+    # 0.01
+    # 0.1
+    #
+    # Most common for transformers:
+    # 0.01
+    weight_decay=0.01,
+
+    # ==========================================================
+    # EVALUATION STRATEGY
+    # ==========================================================
+
+    # Controls when validation runs.
+    #
+    # Possible options:
+    #
+    # "no"
+    #   Never evaluate.
+    #
+    # "steps"
+    #   Evaluate every eval_steps.
+    #
+    # "epoch"
+    #   Evaluate after each epoch.
+    #
+    # Common:
+    # "steps" for large datasets.
+    # "epoch" for small datasets.
+    eval_strategy="steps",
+
+    # Number of update steps between evaluations.
+    #
+    # Only used when:
+    # eval_strategy="steps"
+    #
+    # Common values:
+    # 50
+    # 100
+    # 500
+    # 1000
+    eval_steps=50,
+
+    # ==========================================================
+    # CHECKPOINT SAVING
+    # ==========================================================
+
+    # Number of update steps between checkpoint saves.
+    #
+    # Only relevant when save_strategy="steps"
+    #
+    # Common values:
+    # 50
+    # 100
+    # 500
+    # 1000
+    save_steps=50,
+
+    # Maximum number of checkpoints retained.
+    #
+    # Example:
+    #
+    # checkpoint-100
+    # checkpoint-200
+    # checkpoint-300
+    #
+    # save_total_limit=2
+    #
+    # checkpoint-100 deleted automatically.
+    #
+    # Common values:
+    # 1
+    # 2
+    # 3
+    # 5
+    save_total_limit=2,
+
+    # ==========================================================
+    # BEST MODEL SELECTION
+    # ==========================================================
+
+    # At training end:
+    #
+    # False:
+    #   Return final checkpoint.
+    #
+    # True:
+    #   Return best checkpoint according
+    #   to metric_for_best_model.
+    #
+    # Usually recommended.
+    load_best_model_at_end=True,
+
+    # Metric used to determine best checkpoint.
+    #
+    # Common options:
+    #
+    # "eval_loss"
+    #
+    # Custom metrics:
+    # "accuracy"
+    # "f1"
+    # "bleu"
+    # "rouge"
+    #
+    # Must exist in evaluation output.
+    metric_for_best_model="eval_loss",
+
+    # Determines whether larger or smaller metric values
+    # are considered better.
+    #
+    # False:
+    # Smaller is better.
+    #
+    # Examples:
+    # eval_loss
+    # perplexity
+    #
+    # True:
+    # Larger is better.
+    #
+    # Examples:
+    # accuracy
+    # f1
+    # rouge
+    # bleu
+    greater_is_better=False,
+
+    # ==========================================================
+    # MIXED PRECISION
+    # ==========================================================
+
+    # Use FP16 training.
+    #
+    # Benefits:
+    # - Faster training
+    # - Less VRAM
+    #
+    # Options:
+    #
+    # fp16=True
+    #   Use float16
+    #
+    # fp16=False
+    #   Disable float16
+    #
+    # Alternative:
+    #
+    # bf16=True
+    #   Use bfloat16
+    #
+    # BF16 is usually preferred on:
+    # A100
+    # H100
+    # RTX 4090
+    fp16=True,
+
+    # ==========================================================
+    # LOGGING BACKEND
+    # ==========================================================
+
+    # Controls where metrics are reported.
+    #
+    # Possible values:
+    #
+    # "none"
+    #   No reporting.
+    #
+    # "tensorboard"
+    #   TensorBoard logs.
+    #
+    # "wandb"
+    #   Weights & Biases.
+    #
+    # "mlflow"
+    #   MLflow tracking.
+    #
+    # "comet_ml"
+    #   Comet logging.
+    #
+    # Multiple values possible:
+    #
+    # report_to=["tensorboard","wandb"]
+    #
+    # Very common:
+    # "none"
+    # "wandb"
+    report_to="none"
+)
+'''
