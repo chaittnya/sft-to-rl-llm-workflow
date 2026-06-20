@@ -12,18 +12,18 @@ OUTPUT_PATH = "./dpo_pairs.jsonl"
 
 # Build a pair of responses for each prompt. The preferred response is written to
 # be more helpful, while the dispreferred response is intentionally weaker.
+# Column names follow the standard preference format expected by trl's
+# DPOTrainer: "prompt", "chosen", "rejected".
 def build_pair(example):
     prompt = (
         f"### Instruction:\n{example['instruction']}\n\n"
         f"### Input:\n{example['input']}\n\n"
         "### Response:"
     )
-    preferred = f"{prompt} This response is more helpful and complete."
-    dispreferred = f"{prompt} This response is shorter and less detailed."
     return {
-        "query": prompt,
-        "preferred_response": preferred,
-        "dispreferred_response": dispreferred,
+        "prompt": prompt,
+        "chosen": " This response is more helpful and complete.",
+        "rejected": " This response is shorter and less detailed.",
     }
 
 if __name__ == "__main__":

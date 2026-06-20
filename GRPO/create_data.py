@@ -3,30 +3,22 @@ import json
 
 
 # Data creation for GRPO
-# Create a small set of prompt-reward examples to illustrate how reward-guided
-# policy optimization can be launched from a supervised base model.
+# Create a small set of prompts for reward-guided policy optimization. GRPO
+# generates and scores completions itself during training, so this script only
+# needs to supply prompts; the reward function lives in grpo.py.
 DATA_SOURCE = "yahma/alpaca-cleaned"
 SPLIT = "train[:200]"
 OUTPUT_PATH = "./grpo_items.jsonl"
 
-# A toy reward function used only for illustrative purposes. A real reward
-# function would be learned from human judgments or a dedicated reward model.
-def compute_reward(text):
-    return min(len(text.split()) / 20.0, 1.0)
-
-# Build a prompt entry that includes a placeholder response and its reward.
+# Build a prompt entry. The "prompt" column name matches what trl's
+# GRPOTrainer expects.
 def build_item(example):
     prompt = (
         f"### Instruction:\n{example['instruction']}\n\n"
         f"### Input:\n{example['input']}\n\n"
         "### Response:"
     )
-    placeholder_response = "This is a sample response used for reward estimation."
-    return {
-        "query": prompt,
-        "sample_response": placeholder_response,
-        "reward": compute_reward(placeholder_response),
-    }
+    return {"prompt": prompt}
 
 if __name__ == "__main__":
     dataset = load_dataset(DATA_SOURCE, split=SPLIT)

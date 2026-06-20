@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Generated datasets (produced by create_data.py / create_*_data.py scripts)
+*.jsonl
+
+# Model checkpoints and training output produced by the scripts in this repo
+SFT/final_model/
+SFT/final_lora/
+SFT/sft_model/
+SFT/smollm_lora/
+PPO/ppo_model/
+PPO/reward_model/
+PPO/value_model/
+DPO/dpo_model/
+GRPO/grpo_model/
+GRPO/reward_model/
+checkpoint-*/
+
+# Hugging Face / torch caches
+.cache/
+wandb/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

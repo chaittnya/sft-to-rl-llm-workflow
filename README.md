@@ -10,8 +10,12 @@ This repository contains scripts for training and experimenting with large langu
 
 - `PPO/`
   - `create_data.py` — generates prompt data for PPO training in JSONL format.
-  - `ppo.py` — a simple PPO script that uses the SFT-finetuned model as the base policy.
-  - The PPO code is intended to show how a policy and reference model can be initialized from the same supervised checkpoint and then updated based on a toy reward function.
+  - `create_reward_data.py` — generates synthetic chosen/rejected pairs used to train a reward model.
+  - `train_reward_model.py` — trains a reward model on those pairs and saves it to `./reward_model`.
+  - `create_value_data.py` — generates regression examples (response text plus a target score) used to train a value model.
+  - `train_value_model.py` — fine-tunes a value model, warm-started from the reward model checkpoint, and saves it to `./value_model`.
+  - `ppo.py` — a PPO script that uses the SFT-finetuned model as the policy, the trained reward model checkpoint to score responses, and the trained value model checkpoint as the critic.
+  - The PPO code is intended to show how a policy and reference model can be initialized from the same supervised checkpoint, and how the reward model and value model are each trained for their own distinct job (pairwise ranking vs. single-response regression) before PPO uses them.
 
 - `DPO/`
   - `create_data.py` — creates synthetic preference pairs for DPO training.
@@ -19,9 +23,11 @@ This repository contains scripts for training and experimenting with large langu
   - This directory is designed to demonstrate how preference-based fine-tuning can be set up from a pretrained policy.
 
 - `GRPO/`
-  - `create_data.py` — generates example prompt-reward pairs for GRPO.
-  - `grpo.py` — a GRPO script that also uses the SFT checkpoint as the base model and performs reward-guided policy updates.
-  - The GRPO example is intentionally lightweight and uses a toy reward metric for demonstration.
+  - `create_data.py` — generates example prompts for GRPO.
+  - `create_reward_data.py` — generates synthetic chosen/rejected pairs used to train a reward model.
+  - `train_reward_model.py` — trains a reward model on those pairs and saves it to `./reward_model`.
+  - `grpo.py` — a GRPO script that uses the SFT checkpoint as the base model and scores each generated completion with the trained reward model instead of a toy heuristic.
+  - The GRPO example shows reward-guided policy updates driven by an actual trained reward model rather than a hand-written reward formula.
 
 ## How it was designed
 
@@ -33,13 +39,15 @@ The scripts are written in a style that is intended to resemble a postgraduate s
 ## Notes
 
 - The repository is not a polished production training pipeline; it is a teaching-oriented collection of examples.
-- The RL reward functions in the current scripts are placeholders and should be replaced with real reward models or preference data for serious experiments.
+- The reward signal used in DPO is still a synthetic/toy placeholder. PPO and GRPO both train an actual reward model on synthetic preference data first; PPO additionally trains a value model used as its critic.
 - The datasets are intentionally kept small to make the examples easier to inspect and to reduce runtime when testing locally.
 
 ## Usage
 
 1. Run `SFT/sft.py` first to produce a base model checkpoint in `SFT/final_model`.
 2. Use the `create_data.py` script in each RL folder to generate the input files.
-3. Run the RL script in `PPO/`, `DPO/`, or `GRPO/` to continue training from the supervised checkpoint.
+3. For PPO specifically, also run `PPO/create_reward_data.py` then `PPO/train_reward_model.py` to produce a reward model checkpoint, and `PPO/create_value_data.py` then `PPO/train_value_model.py` to produce a value model checkpoint, before running `ppo.py`.
+4. For GRPO specifically, also run `GRPO/create_reward_data.py` then `GRPO/train_reward_model.py` to produce a reward model checkpoint before running `grpo.py`.
+5. Run the RL script in `PPO/`, `DPO/`, or `GRPO/` to continue training from the supervised checkpoint.
 
 This README is intended as an overview and should help someone understand the general purpose and structure of the code.

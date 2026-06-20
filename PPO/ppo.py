@@ -1,77 +1,86 @@
 from datasets import load_dataset
-from transformers import AutoTokenizer
-from trl import AutoModelForCausalLMWithValueHead, PPOTrainer
+from transformers import (
+    AutoModelForCausalLM,
+    AutoModelForSequenceClassification,
+    AutoTokenizer,
+)
+from trl.experimental.ppo import PPOConfig, PPOTrainer
 
 
 # Configuration
 # We initialize PPO from the supervised fine-tuned checkpoint. This is a common
 # approach in reward learning research, because it gives the policy a useful
 # starting point before RL-based improvements are applied.
+# REWARD_MODEL_PATH and VALUE_MODEL_PATH point at the checkpoints produced by
+# train_reward_model.py and train_value_model.py. Run create_reward_data.py,
+# train_reward_model.py, create_value_data.py and train_value_model.py before
+# this script, otherwise these paths will not exist yet.
 BASE_MODEL_PATH = "../SFT/final_model"
+REWARD_MODEL_PATH = "./reward_model"
+VALUE_MODEL_PATH = "./value_model"
 OUTPUT_DIR = "./ppo_model"
+DATA_PATH = "./ppo_prompts.jsonl"
 
-# Load a compact RL dataset for illustrative purposes.
-dataset = load_dataset("yahma/alpaca-cleaned", split="train[:200]")
+# Load the prompts produced by create_data.py.
+dataset = load_dataset("json", data_files=DATA_PATH, split="train")
 
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL_PATH)
 tokenizer.pad_token = tokenizer.eos_token
 
-# Load the policy and reference policy from the same base checkpoint.
-# The reference model is used by PPO to estimate the KL penalty.
-model = AutoModelForCausalLMWithValueHead.from_pretrained(
-    BASE_MODEL_PATH,
-    device_map="auto"
+
+# PPOTrainer expects a tokenized "input_ids" column rather than raw prompt text.
+def tokenize(example):
+    return {"input_ids": tokenizer(example["prompt"])["input_ids"]}
+
+
+dataset = dataset.map(tokenize, remove_columns=dataset.column_names)
+
+# Policy and reference policy are loaded from the same base checkpoint. The
+# reference model is used by PPO to estimate the KL penalty.
+# device_map="auto" loads each model straight onto the GPU (NVIDIA RTX 2050)
+# if one is available, rather than loading four separate copies into system
+# RAM first.
+policy_model = AutoModelForCausalLM.from_pretrained(
+    BASE_MODEL_PATH, device_map="auto"
 )
-ref_model = AutoModelForCausalLMWithValueHead.from_pretrained(
-    BASE_MODEL_PATH,
-    device_map="auto"
+ref_model = AutoModelForCausalLM.from_pretrained(
+    BASE_MODEL_PATH, device_map="auto"
 )
 
-# Build a prompt for each example. This follows the same prompt structure as the
-# initial SFT dataset, so the policy is not surprised by the input format.
-def build_prompt(example):
-    return (
-        f"### Instruction:\n{example['instruction']}\n\n"
-        f"### Input:\n{example['input']}\n\n"
-        "### Response:"
-    )
+# The reward model is loaded from the checkpoint trained by
+# train_reward_model.py, so it has actually learned to score responses
+# instead of giving out a random untrained score.
+#
+# The value model is loaded from the checkpoint trained by
+# train_value_model.py. It was itself warm-started from the reward model and
+# then fine-tuned on its own regression data, so it already has a reasonable
+# sense of response quality before PPO starts updating it further as the
+# critic.
+reward_model = AutoModelForSequenceClassification.from_pretrained(
+    REWARD_MODEL_PATH, num_labels=1, device_map="auto"
+)
+value_model = AutoModelForSequenceClassification.from_pretrained(
+    VALUE_MODEL_PATH, num_labels=1, device_map="auto"
+)
 
-prompts = [build_prompt(example) for example in dataset]
-
-# Reward function used here is intentionally simplistic. In a genuine
-# experiment you would replace this with a learned reward model or human
-# preference signal.
-def compute_reward(response_text):
-    return min(len(response_text.split()) / 20.0, 1.0)
+args = PPOConfig(
+    output_dir=OUTPUT_DIR,
+    per_device_train_batch_size=4,
+    total_episodes=len(dataset),
+    learning_rate=3e-6,
+    report_to="none",
+)
 
 trainer = PPOTrainer(
-    model=model,
+    args=args,
+    processing_class=tokenizer,
+    model=policy_model,
     ref_model=ref_model,
-    tokenizer=tokenizer,
-    dataset=prompts,
-    output_dir=OUTPUT_DIR,
+    reward_model=reward_model,
+    value_model=value_model,
+    train_dataset=dataset,
 )
 
-# Training loop hyperparameters.
-PPO_BATCH_SIZE = 4
-MAX_NEW_TOKENS = 64
-NUM_EPOCHS = 1
-
-for epoch in range(NUM_EPOCHS):
-    for start in range(0, len(prompts), PPO_BATCH_SIZE):
-        batch_prompts = prompts[start : start + PPO_BATCH_SIZE]
-        responses = []
-
-        for query in batch_prompts:
-            response = trainer.generate(
-                query,
-                max_new_tokens=MAX_NEW_TOKENS,
-                pad_token_id=tokenizer.eos_token_id,
-            )
-            text = tokenizer.decode(response[0], skip_special_tokens=True)
-            responses.append(text)
-
-        rewards = [compute_reward(r) for r in responses]
-        trainer.step(batch_prompts, responses, rewards)
+trainer.train()
 
 trainer.save_model(OUTPUT_DIR)

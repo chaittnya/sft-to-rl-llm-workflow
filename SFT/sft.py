@@ -1,3 +1,4 @@
+import torch
 from datasets import load_dataset
 from transformers import (
     AutoTokenizer,
@@ -48,9 +49,16 @@ val_dataset = val_dataset.map(format_example)
 
 
 # Load model
+# torch_dtype is set to float32 here on purpose. Some checkpoints are stored
+# in bfloat16, and from_pretrained will load them in that dtype by default.
+# fp16 mixed-precision training below relies on GradScaler, which only
+# supports float16 gradients, not bfloat16 - loading in float32 keeps the
+# master weights in a dtype GradScaler can work with, while autocast still
+# runs the forward/backward pass in float16.
 model = AutoModelForCausalLM.from_pretrained(
     MODEL_NAME,
-    device_map="auto"
+    device_map="auto",
+    torch_dtype=torch.float32
 )
 
 

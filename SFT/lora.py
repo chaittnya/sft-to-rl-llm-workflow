@@ -1,3 +1,4 @@
+import torch
 from datasets import load_dataset
 from transformers import (
     AutoTokenizer,
@@ -39,8 +40,14 @@ tokenizer.pad_token = tokenizer.eos_token
 
 
 # MODEL
+# device_map="auto" loads the model straight onto the GPU (NVIDIA RTX 2050)
+# if one is available, instead of loading it into system RAM first. torch_dtype
+# is pinned to float32 so the master weights stay compatible with the fp16
+# GradScaler used by the TrainingArguments below.
 model = AutoModelForCausalLM.from_pretrained(
-    MODEL_NAME
+    MODEL_NAME,
+    device_map="auto",
+    torch_dtype=torch.float32
 )
 
 
