@@ -1,5 +1,8 @@
 from datasets import load_dataset
-from trl import DPOConfig, DPOTrainer
+# Import order matters here: importing DPOConfig before DPOTrainer segfaults
+# on this machine's torch/trl combination, while Trainer-before-Config does
+# not. Keep this order.
+from trl import DPOTrainer, DPOConfig
 
 
 # Configuration

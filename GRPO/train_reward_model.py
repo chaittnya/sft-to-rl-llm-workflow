@@ -1,5 +1,8 @@
 from datasets import load_dataset
-from trl import RewardConfig, RewardTrainer
+# Import order matters here: importing RewardConfig before RewardTrainer
+# segfaults on this machine's torch/trl combination, while Trainer-before-
+# Config does not. Keep this order.
+from trl import RewardTrainer, RewardConfig
 
 
 # ==========================================================

@@ -1,9 +1,12 @@
+import torch
 from datasets import load_dataset
 from transformers import (
     AutoModelForCausalLM,
     AutoModelForSequenceClassification,
     AutoTokenizer,
 )
+# PPOTrainer lives under trl.experimental.ppo rather than the top-level trl
+# namespace. It needs torch>=2.6 (for torch.distributed.fsdp's FSDPModule).
 from trl.experimental.ppo import PPOConfig, PPOTrainer
 
 
@@ -39,12 +42,18 @@ dataset = dataset.map(tokenize, remove_columns=dataset.column_names)
 # reference model is used by PPO to estimate the KL penalty.
 # device_map="auto" loads each model straight onto the GPU (NVIDIA RTX 2050)
 # if one is available, rather than loading four separate copies into system
-# RAM first.
+# RAM first. torch_dtype=torch.bfloat16 roughly halves the memory each model
+# takes up, which matters a lot here: PPO needs all four models (policy,
+# reference, reward, value) resident on the GPU at the same time, and this
+# GPU only has 4GB of VRAM to share between them. bfloat16 (not float16) is
+# used because raw, unscaled gradient updates in float16 overflow to NaN
+# almost immediately; bfloat16 has the same exponent range as float32, so it
+# does not have that problem, and the RTX 2050 (Ampere) supports it natively.
 policy_model = AutoModelForCausalLM.from_pretrained(
-    BASE_MODEL_PATH, device_map="auto"
+    BASE_MODEL_PATH, device_map="auto", torch_dtype=torch.bfloat16
 )
 ref_model = AutoModelForCausalLM.from_pretrained(
-    BASE_MODEL_PATH, device_map="auto"
+    BASE_MODEL_PATH, device_map="auto", torch_dtype=torch.bfloat16
 )
 
 # The reward model is loaded from the checkpoint trained by
@@ -57,15 +66,29 @@ ref_model = AutoModelForCausalLM.from_pretrained(
 # sense of response quality before PPO starts updating it further as the
 # critic.
 reward_model = AutoModelForSequenceClassification.from_pretrained(
-    REWARD_MODEL_PATH, num_labels=1, device_map="auto"
+    REWARD_MODEL_PATH, num_labels=1, device_map="auto", torch_dtype=torch.bfloat16
 )
 value_model = AutoModelForSequenceClassification.from_pretrained(
-    VALUE_MODEL_PATH, num_labels=1, device_map="auto"
+    VALUE_MODEL_PATH, num_labels=1, device_map="auto", torch_dtype=torch.bfloat16
 )
 
 args = PPOConfig(
     output_dir=OUTPUT_DIR,
-    per_device_train_batch_size=4,
+
+    # Small on purpose: this GPU only has 4GB of VRAM shared across four
+    # live models, so a large batch of completions in flight at once runs
+    # out of memory fast.
+    per_device_train_batch_size=2,
+
+    # Number of prompts generated from in one no-grad rollout pass. Defaults
+    # to 64, which is far too much for a 4GB GPU running four models at
+    # once; matching it to the train batch size keeps memory usage in check.
+    local_rollout_forward_batch_size=2,
+
+    # Shorter generations use less activation memory during the rollout and
+    # backward passes. 32 is plenty for these short Alpaca-style responses.
+    response_length=32,
+
     total_episodes=len(dataset),
     learning_rate=3e-6,
     report_to="none",

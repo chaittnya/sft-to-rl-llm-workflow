@@ -1,7 +1,10 @@
 import torch
 from datasets import load_dataset
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
-from trl import GRPOConfig, GRPOTrainer
+# Import order matters here: importing GRPOConfig before GRPOTrainer segfaults
+# on this machine's torch/trl combination, while Trainer-before-Config does
+# not. Keep this order.
+from trl import GRPOTrainer, GRPOConfig
 
 
 # Configuration
