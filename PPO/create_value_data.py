@@ -2,19 +2,6 @@ from datasets import load_dataset
 import json
 
 
-# ==========================================================
-# DATA CREATION FOR THE VALUE MODEL
-# ==========================================================
-# The value model has a different job than the reward model. The reward
-# model only needs to rank two responses against each other (chosen vs
-# rejected). The value model needs to output an actual number for a single
-# response on its own, since PPO uses that number as a baseline to work out
-# how much better or worse a response was than expected.
-# Because of that, the value model is trained with a regression target
-# (a plain number) instead of a pairwise comparison, which is why this data
-# looks a bit different from create_reward_data.py even though it comes from
-# the same underlying responses.
-
 # Which dataset to pull from the Hugging Face Hub.
 DATA_SOURCE = "yahma/alpaca-cleaned"
 

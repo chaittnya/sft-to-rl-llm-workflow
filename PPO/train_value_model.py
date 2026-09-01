@@ -8,19 +8,6 @@ from transformers import (
 )
 
 
-# ==========================================================
-# VALUE MODEL TRAINING
-# ==========================================================
-# This trains the critic that PPO needs. The value model looks at a single
-# response and predicts how good it is, as a plain number. PPO compares this
-# prediction against the actual reward it observes to figure out the
-# "advantage" of each action, which is what drives the policy update.
-#
-# We start from the reward model checkpoint rather than the plain SFT model.
-# Both models share the same scalar-output architecture, so this gives the
-# value head a reasonable starting point instead of random weights. We then
-# fine-tune it here on its own regression data (see create_value_data.py) so
-# it learns the value model's specific job before PPO starts using it.
 REWARD_MODEL_PATH = "./reward_model"
 OUTPUT_DIR = "./value_model"
 DATA_PATH = "./value_data.jsonl"

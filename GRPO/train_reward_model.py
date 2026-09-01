@@ -5,17 +5,6 @@ from datasets import load_dataset
 from trl import RewardTrainer, RewardConfig
 
 
-# ==========================================================
-# REWARD MODEL TRAINING (FOR GRPO)
-# ==========================================================
-# This trains a reward model on the chosen/rejected pairs from
-# create_reward_data.py. grpo.py then loads this checkpoint and uses it as
-# the reward function instead of a toy length heuristic.
-#
-# We start the reward model from the same SFT checkpoint as the policy. The
-# reward model is loaded as AutoModelForSequenceClassification under the
-# hood (with num_labels=1), so it outputs a single score instead of a
-# distribution over the vocabulary.
 BASE_MODEL_PATH = "../SFT/final_model"
 OUTPUT_DIR = "./reward_model"
 DATA_PATH = "./reward_pairs.jsonl"

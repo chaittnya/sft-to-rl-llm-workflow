@@ -5,18 +5,6 @@ from datasets import load_dataset
 from trl import RewardTrainer, RewardConfig
 
 
-# ==========================================================
-# REWARD MODEL TRAINING
-# ==========================================================
-# PPO needs a reward model that can actually look at a response and give it a
-# score. Without this, PPO has nothing real to optimize against. This script
-# trains that reward model on the chosen/rejected pairs from
-# create_reward_data.py, before we ever touch ppo.py.
-#
-# We start the reward model from the same SFT checkpoint as the policy. The
-# reward model is loaded as AutoModelForSequenceClassification under the
-# hood (with num_labels=1), so it outputs a single score instead of a
-# distribution over the vocabulary.
 BASE_MODEL_PATH = "../SFT/final_model"
 OUTPUT_DIR = "./reward_model"
 DATA_PATH = "./reward_pairs.jsonl"

@@ -8,26 +8,6 @@ from transformers import (
 )
 
 
-# ==========================================================
-# PLACKETT-LUCE (K-WISE) REWARD MODEL TRAINING
-# ==========================================================
-# Bradley-Terry (the standard RewardTrainer) only ever compares 2 items at
-# once. Plackett-Luce generalises this to a full ranking over k items.
-#
-# Given k completions for a prompt ranked from best (index 0) to worst
-# (index k-1), the Plackett-Luce log-likelihood of observing that ranking is:
-#
-#   log P(ranking) = sum_{i=0}^{k-1} [ s_i - logsumexp(s_i, s_{i+1}, ..., s_{k-1}) ]
-#
-# Intuitively: at each position i we "remove" the winner from the pool and ask
-# how likely the model is to pick it over the remaining candidates. Summing
-# over all positions gives the full ranking probability.
-#
-# The trained model is still AutoModelForSequenceClassification with
-# num_labels=1 — it outputs a single scalar score per (prompt + completion).
-# Only the training objective changes; inference is identical to the pairwise
-# reward model, so grpo_kwise.py can swap this checkpoint in directly.
-
 BASE_MODEL_PATH = "../SFT/final_model"
 OUTPUT_DIR = "./kwise_reward_model"
 DATA_PATH = "./kwise_reward_data.jsonl"

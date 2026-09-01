@@ -2,14 +2,6 @@ from datasets import load_dataset
 import json
 
 
-# ==========================================================
-# DATA CREATION FOR PPO
-# ==========================================================
-# This script builds a small file of prompts that the PPO script (ppo.py) can
-# load later. We are not training anything here, we are just preparing the
-# input data. Think of this as "step 0" before the actual RL training starts.
-
-
 # Which dataset to pull from the Hugging Face Hub.
 # Possible values:
 # - any dataset repo id on the hub, e.g. "yahma/alpaca-cleaned"

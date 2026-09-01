@@ -2,15 +2,6 @@ from datasets import load_dataset
 import json
 
 
-# ==========================================================
-# DATA CREATION FOR THE GRPO REWARD MODEL
-# ==========================================================
-# GRPO needs a reward function that can score a generated completion. Up to
-# now grpo.py used a toy length-based heuristic. This script instead builds
-# pairwise data (one "chosen" response, one "rejected" response per prompt)
-# so we can train an actual reward model on it, the same way PPO/create_reward_data.py
-# does for the PPO folder.
-
 # Which dataset to pull from the Hugging Face Hub.
 DATA_SOURCE = "yahma/alpaca-cleaned"
 

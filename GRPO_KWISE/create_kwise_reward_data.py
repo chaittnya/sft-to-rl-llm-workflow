@@ -2,23 +2,6 @@ from datasets import load_dataset
 import json
 
 
-# ==========================================================
-# K-WISE (PLACKETT-LUCE) REWARD DATA CREATION
-# ==========================================================
-# The standard Bradley-Terry reward model only compares 2 completions at a time
-# (chosen vs rejected). Plackett-Luce extends this to k completions at once,
-# which gives the model more signal per prompt: it learns to rank all k
-# responses instead of just separating one pair.
-#
-# This script generates 4 completions per prompt, ordered best -> worst:
-#   rank 0 (best)   - the real Alpaca reference answer
-#   rank 1          - a shorter, less complete version of the real answer
-#   rank 2          - a vague, generic filler
-#   rank 3 (worst)  - an outright refusal / unhelpful response
-#
-# train_kwise_reward_model.py reads this file and treats the order as a
-# complete ranking for the Plackett-Luce loss.
-
 DATA_SOURCE = "yahma/alpaca-cleaned"
 
 # How much data to use.

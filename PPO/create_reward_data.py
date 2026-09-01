@@ -2,15 +2,6 @@ from datasets import load_dataset
 import json
 
 
-# ==========================================================
-# DATA CREATION FOR THE REWARD MODEL
-# ==========================================================
-# Before we can run PPO, the policy needs a reward model that actually knows
-# how to score a response. A reward model is trained on pairs of responses
-# where one is marked "chosen" (better) and the other "rejected" (worse).
-# This script builds that pairwise data. It is the same idea as DPO/create_data.py,
-# just kept as its own file so the PPO folder is self-contained.
-
 # Which dataset to pull from the Hugging Face Hub.
 # Possible values:
 # - any dataset repo id on the hub, e.g. "yahma/alpaca-cleaned"
